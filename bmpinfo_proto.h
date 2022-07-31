@@ -1,0 +1,13 @@
+int printBmpInfos(BmpFile* b, unsigned int fileSize);
+FileInfo readBmpFile(char* fileName);
+FILE* openFile(char* fileName);
+void closeFile(FILE* f);
+FileInfo readFile(FILE* f);
+unsigned int getFileSize(FILE* f);
+unsigned char* allocBuffer(unsigned int bufferSize);
+void exitWithErrorMessage(char* format, ...);
+void tidy_up(void);
+void dumpBuffer(int fileOffset, unsigned char* buffer, int bufferLength);
+void dumpLine(int fileOffset, unsigned char* buffer, int availableCharsInBuffer);
+void dumpCharAsHex(char* hexArea, unsigned char c);
+void dumpCharAsAscii(char* asciiArea, unsigned char c);
