@@ -5,7 +5,7 @@ ifeq ($(OS),Windows_NT)
   CC  = cl /nologo /D_CRT_SECURE_NO_WARNINGS /O2 /Fe:
   CP  = copy
   RM  = del 2>nul
-  BIN_DIR = c:\doc\bin
+  BIN_DIR = ..\..\bin
 else
   EXE =
   OBJ = .o
@@ -13,7 +13,7 @@ else
   CC = cc -O2 -o
   CP = cp
   RM = rm -f
-  BIN_DIR = /data/doc/bin
+  BIN_DIR = ../../bin
 endif
 PROTO_GEN = $(QUOTE)$$b=/^[A-Za-z].+[(,)]$$/||$$b;$$e=/\)$$/;if($$b){chomp;print;if($$e){print chr(59);$$b=!$$b};print$$/}$(QUOTE)
 

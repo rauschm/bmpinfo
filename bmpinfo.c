@@ -38,7 +38,7 @@ typedef struct BmpFile {
     char          application_value_2[2];  /* = 0 */
     unsigned int  bitmap_offset;           /* unit: Bytes = 54/62/70/118/1078 */
   } header;
-  
+
   struct {
     unsigned int   dib_header_size;        /* unit: Bytes = 40 */
     signed int     image_width;            /* unit = Pixel */
@@ -54,7 +54,7 @@ typedef struct BmpFile {
   } dib_header;
 
   union {
-    struct bpp_1 { 
+    struct bpp_1 {
       BGRA colormap[2];
       struct {
         unsigned int ix00:1, ix01:1, ix02:1, ix03:1, ix04:1, ix05:1, ix06:1, ix07:1,
@@ -76,7 +76,7 @@ typedef struct BmpFile {
         unsigned int ix00:4, ix01:4, ix02:4, ix03:4, ix04:4, ix05:4, ix06:4, ix07:4;
       } bitmap[1];
     } b4;
-    struct bpp_8 { 
+    struct bpp_8 {
       BGRA colormap[256];
       struct {
         unsigned int ix00:8, ix01:8, ix02:8, ix03:8;
@@ -85,7 +85,7 @@ typedef struct BmpFile {
     struct bpp_24 {
       BGR bitmap[4];
     } b24;
-  }; 
+  };
 } BmpFile;
 #pragma pack(pop)
 
@@ -103,11 +103,12 @@ void main(int argc, char* argv[]) {
   if (argc != 2)
     exitWithErrorMessage("Gibt Informationen über eine BMP-Datei aus\n"
                          "Aufruf: bmpinfo Datei\n");
-    
+
   FileInfo bmpFileInfo = readBmpFile(argv[1]);
   if (printBmpInfos((BmpFile*) bmpFileInfo.fileData, bmpFileInfo.fileSize))
   {
-    dumpBuffer(0, bmpFileInfo.fileData, min(4000, bmpFileInfo.fileSize));
+    dumpBuffer(0, bmpFileInfo.fileData,
+               bmpFileInfo.fileSize < 4000 ? bmpFileInfo.fileSize : 4000);
   }
   free(bmpFileInfo.fileData);
 }
@@ -120,7 +121,7 @@ int printBmpInfos(BmpFile* b, unsigned int fileSize)
   if (b->header.BM[0] != 'B' || b->header.BM[1] != 'M')
   {
     fprintf(stderr, "file corrupt, Magic != BM: %02x%02x\n",
-      b->header.BM[0], b->header.BM[1]);
+            b->header.BM[0], b->header.BM[1]);
     return 1;
   }
   printf("Magic: %32s\n", "BM");
@@ -128,25 +129,25 @@ int printBmpInfos(BmpFile* b, unsigned int fileSize)
   if ((uist = b->header.file_size) != (usoll = fileSize))
   {
     fprintf(stderr, "file corrupt, internal size != %u: %u\n",
-      usoll, uist);
+            usoll, uist);
     return 1;
   }
   printf("File Size: %28u\n", uist);
 
   if (   (uist = b->dib_header.bits_per_pixel) != 1
-    && uist != 2 && uist != 4 && uist != 8 && uist != 24)
+      && uist != 2 && uist != 4 && uist != 8 && uist != 24)
   {
     fprintf(stderr, "file corrupt, incorrect bpp != %s: %u \n",
-      "(1,2,4,8,24)", uist);
+            "(1,2,4,8,24)", uist);
     return 1;
   }
   printf("Bits per Pixel: %23u\n", uist);
 
   if ((uist = b->dib_header.number_of_colors) >
-    (usoll = (1 << b->dib_header.bits_per_pixel) & 0x1ff))
+      (usoll = (1 << b->dib_header.bits_per_pixel) & 0x1ff))
   {
     fprintf(stderr, "file corrupt, number of palette colors too large > %u: %u\n",
-      uist, usoll);
+            uist, usoll);
     return 1;
   }
 
@@ -154,43 +155,43 @@ int printBmpInfos(BmpFile* b, unsigned int fileSize)
   {
     /* der Wert liegt hinter dem Dateiende */
     fprintf(stderr, "file corrupt, incorrect bitmap offset > %u: %u\n",
-      usoll, uist);
+            usoll, uist);
     return 1;
-  }  
-  if ((uist = b->header.bitmap_offset) < 
-    (usoll = 54 + (  b->dib_header.bits_per_pixel == 24 ? 0  
+  }
+  if ((uist = b->header.bitmap_offset) <
+      (usoll = 54 + (  b->dib_header.bits_per_pixel == 24 ? 0
       : b->dib_header.number_of_colors != 0 ? b->dib_header.number_of_colors * 4
       : (1 << b->dib_header.bits_per_pixel) * 4)))
   {
-    /* der Wert liegt innerhalb der Header oder Paletten Daten */
+    /* der Wert liegt innerhalb der Header- oder Paletten-Daten */
     fprintf(stderr, "file corrupt, incorrect bitmap offset < %u: %u\n",
-      usoll, uist);
+            usoll, uist);
     return 1;
   }
   if(uist > usoll)
   {
     fprintf(stderr, "INFO: bitmap offset larger than necessary > %u: %u\n",
-      usoll, uist);
-  }  
+            usoll, uist);
+  }
   printf("Bitmap Offset: %24u\n", uist);
 
   if ((uist = b->dib_header.bitmap_raw_size) >
-    (usoll = fileSize - b->header.bitmap_offset))
+      (usoll = fileSize - b->header.bitmap_offset))
   {
     /* die Daten passen nicht mehr zwischen Offset und Dateiende */
     fprintf(stderr, "file corrupt, incorrect bitmap size > %u: %u\n",
-      usoll, uist);
+            usoll, uist);
     return 1;
   }
   if (uist < usoll)
   {
     fprintf(stderr, "INFO: file contains bytes after bitmap: %u\n",
-      usoll - uist);
+            usoll - uist);
   }
   printf("Bitmap Size (raw): %20u\n", uist);
 
   if (((b->dib_header.image_width * b->dib_header.bits_per_pixel + 31) / 32) * 4
-    * abs(b->dib_header.image_height) != b->dib_header.bitmap_raw_size) 
+      * abs(b->dib_header.image_height) != b->dib_header.bitmap_raw_size)
   {
     fprintf(stderr, "file corrupt, image width * image height doesn't "
             "fit bitmap size %u: %u * %u\n",
@@ -201,7 +202,7 @@ int printBmpInfos(BmpFile* b, unsigned int fileSize)
   printf("Image Width: %26d\n", b->dib_header.image_width);
   printf("Image Height: %9s %15u\n",
          b->dib_header.image_height > 0 ? "(flipped)" :"",
-         abs(b->dib_header.image_height)); 
+         abs(b->dib_header.image_height));
 
   if (b->dib_header.color_planes != 1)
   {
@@ -209,9 +210,9 @@ int printBmpInfos(BmpFile* b, unsigned int fileSize)
             b->dib_header.color_planes);
     return 1;
   }
-  printf("Color Planes: %25u\n", 1); 
+  printf("Color Planes: %25u\n", 1);
 
-  if (b->dib_header.compression_method != 0) 
+  if (b->dib_header.compression_method != 0)
   {
     fprintf(stderr, "sorry, compression not yet supported by this tool\n");
     return 1;
@@ -221,7 +222,7 @@ int printBmpInfos(BmpFile* b, unsigned int fileSize)
   printf("Horizontal Resolution: %16d\n", b->dib_header.horizontal_resolution);
   printf("Vertical Resolution: %18d\n", b->dib_header.vertical_resolution);
 
-  /* oben schon geprüft! */  
+  /* oben schon geprüft! */
   if (b->dib_header.number_of_colors == 0 && b->dib_header.bits_per_pixel != 24)
   {
     printf("Number of Palette Colors: %9s %3u\n", "0 =", 1 << b->dib_header.bits_per_pixel);
@@ -229,38 +230,38 @@ int printBmpInfos(BmpFile* b, unsigned int fileSize)
   else
   {
     printf("Number of Palette Colors: %13u\n", b->dib_header.number_of_colors);
-  }  
+  }
   if ((uist = b->dib_header.number_of_important_colors) >
       (usoll = b->dib_header.number_of_colors))
   {
     fprintf(stderr, "file corrupt, incorrect number of important colors > %u: %u\n",
-      usoll, uist);
+            usoll, uist);
     return 1;
-  } 
+  }
   printf("Number of Important Palette Colors: %3u\n", uist);
 
-  printf("Bitmap Data (index:Blue Green Red):\n");  
+  printf("Bitmap Data (index:Blue Green Red):\n");
 
   int bytes_per_line = ((b->dib_header.image_width * b->dib_header.bits_per_pixel + 31) / 32) * 4;
   unsigned char* y_ptr = ((unsigned char *) b)
                        + b->header.bitmap_offset
                        + (b->dib_header.image_height < 0 ? 0
                           : (abs(b->dib_header.image_height) - 1) * bytes_per_line);
-  int delta_y = b->dib_header.image_height < 0 ? bytes_per_line : -bytes_per_line; 
-  unsigned int pixel_mask = (1 << b->dib_header.bits_per_pixel) - 1; 
+  int delta_y = b->dib_header.image_height < 0 ? bytes_per_line : -bytes_per_line;
+  unsigned int pixel_mask = (1 << b->dib_header.bits_per_pixel) - 1;
   unsigned int index_digits = b->dib_header.bits_per_pixel <= 2 ? 1
                             : b->dib_header.bits_per_pixel == 4 ? 2 : 3;
 
   for (int y = abs(b->dib_header.image_height); y > 0; --y)
   {
-    if (b->dib_header.bits_per_pixel == 24) 
+    if (b->dib_header.bits_per_pixel == 24)
     {
       BGR* x_ptr = (BGR*) y_ptr;
       for (int x = b->dib_header.image_width; x > 0; --x)
       {
         printf("%02x%02x%02x%c", x_ptr->B, x_ptr->G, x_ptr->R,
                                  (x > 1 ? '-' : '\n'));
-        ((unsigned char*) x_ptr) += 3;
+        * (unsigned char**) &x_ptr += 3;
       }
     }
     else
@@ -281,7 +282,7 @@ int printBmpInfos(BmpFile* b, unsigned int fileSize)
         {
           pixels_left = 8;
           x_ptr += 1;
-        } 
+        }
       }
     }
     y_ptr += delta_y;
@@ -305,7 +306,7 @@ FILE* openFile(char* fileName)
 
   if ((f = fopen(fileName, "rb")) == NULL)
     exitWithErrorMessage("open error %s: %s\n", fileName, strerror(errno));
-  TIDY_INFO(f);    
+  TIDY_INFO(f);
   return f;
 }
 
@@ -403,4 +404,4 @@ void dumpCharAsHex(char* hexArea, unsigned char c)
 void dumpCharAsAscii(char* asciiArea, unsigned char c)
 {
   asciiArea[0] = (c < 32 || c >= 127) ? '.' : c;
-}  
+}
