@@ -15,7 +15,7 @@ else
   RM = rm -f
   BIN_DIR = ../../bin
 endif
-PROTO_GEN = $(QUOTE)$$b=/^[A-Za-z].+[(,)]$$/||$$b;$$e=/\)$$/;if($$b){chomp;print;if($$e){print chr(59);$$b=!$$b};print$$/}$(QUOTE)
+PROTO_GEN = $(QUOTE)$$b=/^[A-Za-z].+[(,)]$$/||$$b;$$e=/\)$$/;if($$b){chomp;print;if($$e){print(chr(59));$$b=!$$b};print$$/}$(QUOTE)
 
 .PHONY : clean install
 
