@@ -22,9 +22,9 @@ struct
 {
   FILE* f;
   unsigned char* buffer;
-} tidy_info = { NULL, NULL };
+} cleanup_info = { NULL, NULL };
 
-#define TIDY_INFO(x) do { tidy_info.x = x; } while (0)
+#define CLEANUP_INFO(x) do { cleanup_info.x = x; } while (0)
 
 typedef struct { unsigned int B:8, G:8, R:8; } BGR;
 typedef struct { unsigned int B:8, G:8, R:8, A:8; } BGRA;
@@ -306,7 +306,7 @@ FILE* openFile(char* fileName)
 
   if ((f = fopen(fileName, "rb")) == NULL)
     exitWithErrorMessage("open error %s: %s\n", fileName, strerror(errno));
-  TIDY_INFO(f);
+  CLEANUP_INFO(f);
   return f;
 }
 
@@ -315,7 +315,7 @@ void closeFile(FILE* f)
 {
   fclose(f);
   f = NULL;
-  TIDY_INFO(f);
+  CLEANUP_INFO(f);
 }
 
 
@@ -342,7 +342,7 @@ unsigned char* allocBuffer(unsigned int bufferSize)
   unsigned char* buffer = malloc(bufferSize);
   if (buffer == NULL)
     exitWithErrorMessage("malloc error: %s", strerror(errno));
-  TIDY_INFO(buffer);
+  CLEANUP_INFO(buffer);
   return buffer;
 }
 
@@ -354,17 +354,17 @@ void exitWithErrorMessage(char* format, ...)
   va_start(args, format);
   vfprintf(stderr, format, args);
   va_end(args);
-  tidy_up();
+  cleanup();
   exit(1);
 }
 
 
-void tidy_up(void)
+void cleanup(void)
 {
-  if (tidy_info.f != NULL)
-    fclose(tidy_info.f);
-  if (tidy_info.buffer != NULL)
-    free(tidy_info.buffer);
+  if (cleanup_info.f != NULL)
+    fclose(cleanup_info.f);
+  if (cleanup_info.buffer != NULL)
+    free(cleanup_info.buffer);
 }
 
 
